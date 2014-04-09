@@ -240,10 +240,10 @@ class ZMQSocket {
      * @param integer $flags    self::MODE_NOBLOCK or 0
      * @throws ZMQException if sending message fails
      *
-     * @return ZMQ
+     * @return mixed
      */
     <<__Native>>
-    public function send(string $message, int $flags = 0): ZMQSocket;
+    public function send(string $message, int $flags = 0): mixed;
 
     /**
      * Receives a message from the queue.
@@ -251,9 +251,10 @@ class ZMQSocket {
      * @param integer $flags self::MODE_NOBLOCK or 0
      * @throws ZMQException if receiving fails.
      *
-     * @return string
+     * @return mixed
      */
-    public function recv($flags = 0) {}
+    <<__Native>>
+    public function recv(int $flags = 0): mixed;
 
     /**
      * Connect the socket to a remote endpoint. For more information about the dsn 
@@ -318,7 +319,7 @@ class ZMQSocket {
      * @throws ZMQException
      * @return mixed
      */
-    public function getSockOpt($key) {}    
+    public function getSockOpt(int $key) {} 
 
     /**
      * Get endpoints where the socket is connected to. The return array

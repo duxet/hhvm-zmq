@@ -104,15 +104,49 @@ static Object HHVM_METHOD(ZMQSocket, disconnect, const String& dsn) {
   return this_;
 }
 
-static Object HHVM_METHOD(ZMQSocket, send, const String& message, int64_t mode) {
+static Variant HHVM_METHOD(ZMQSocket, recv, int64_t mode) {
   auto socket = getResource<SocketData>(this_, "socket");
 
-  int result = zmq_send(socket->get(), message.c_str(), message.size() + 1, mode);
-
+  zmq_msg_t msg;
+  int result = zmq_msg_init(&msg);
+  
   if (result != 0) {
-    throwException(s_ZMQSocketException, errno, "Failed to send message: %s", zmq_strerror(errno));
+    throwException(s_ZMQSocketException, errno, "Failed to initialize message structure: %s", zmq_strerror(errno));
   }
   
+  result = zmq_msg_recv(&msg, socket->get(), mode);
+  int errno_ = errno;
+  
+  if (result == -1) {
+    zmq_msg_close(&msg);  
+      
+    if (errno_ == EAGAIN) {
+      return false;
+    }     
+      
+    throwException(s_ZMQSocketException, errno, "Failed to receive message: %s", zmq_strerror(errno));
+  }
+  
+  std::string data((const char*) zmq_msg_data(&msg), zmq_msg_size(&msg));
+  
+  zmq_msg_close(&msg);
+  
+  return data;
+}
+
+static Variant HHVM_METHOD(ZMQSocket, send, const String& message, int64_t mode) {
+  auto socket = getResource<SocketData>(this_, "socket");
+
+  result = zmq_send(socket->get(), message.c_str(), message.size() + 1, mode);
+
+  if (result == -1) {
+    if (errno == EAGAIN) {
+      return false;
+    }  
+      
+    throwException(s_ZMQSocketException, errno, "Failed to send message: %s", zmq_strerror(errno));
+  }
+
   return this_;
 }
 
@@ -156,6 +190,7 @@ static class ZMQExtension : public Extension {
     HHVM_ME(ZMQSocket, bind);
     HHVM_ME(ZMQSocket, connect);
     HHVM_ME(ZMQSocket, disconnect);
+    HHVM_ME(ZMQSocket, recv);
     HHVM_ME(ZMQSocket, send);
     HHVM_ME(ZMQSocket, setSockOpt);
     HHVM_ME(ZMQSocket, getSocketType);
