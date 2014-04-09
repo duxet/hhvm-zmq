@@ -332,3 +332,12 @@ class ZMQSocket {
      */
     public function isPersistent() {}
 }
+
+class ZMQException extends Exception {
+}
+
+class ZMQContextException extends ZMQException {
+}
+
+class ZMQSocketException extends ZMQException {
+}
