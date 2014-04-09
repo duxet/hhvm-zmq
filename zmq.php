@@ -335,7 +335,8 @@ class ZMQSocket {
      * @throws ZMQException
      * @return integer 
      */
-    public function getSocketType() {}
+    <<__Native>>
+    public function getSocketType(): int;
     
     /**
      * Whether the socket is persistent

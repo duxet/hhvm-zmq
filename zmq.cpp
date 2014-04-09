@@ -130,6 +130,22 @@ static Object HHVM_METHOD(ZMQSocket, setSockOpt, int64_t key, const Variant& val
   return this_;
 }
 
+static int64_t HHVM_METHOD(ZMQSocket, getSocketType) {
+  auto socket = getResource<SocketData>(this_, "socket");
+
+  int type;
+  size_t type_size;
+  type_size = sizeof(int);
+  
+  int result = zmq_getsockopt(socket->get(), ZMQ_TYPE, &type, &type_size);
+
+  if (result != -1) {
+      return type;
+  }
+
+  return -1;
+}
+
 static class ZMQExtension : public Extension {
  public:
   ZMQExtension() : Extension("zmq") {}
@@ -142,6 +158,7 @@ static class ZMQExtension : public Extension {
     HHVM_ME(ZMQSocket, disconnect);
     HHVM_ME(ZMQSocket, send);
     HHVM_ME(ZMQSocket, setSockOpt);
+    HHVM_ME(ZMQSocket, getSocketType);
     
     loadSystemlib();
   }
