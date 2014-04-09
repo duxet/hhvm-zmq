@@ -92,6 +92,18 @@ static Object HHVM_METHOD(ZMQSocket, connect, const String& dsn, bool force) {
   return this_;
 }
 
+static Object HHVM_METHOD(ZMQSocket, disconnect, const String& dsn) {
+  auto socket = getResource<SocketData>(this_, "socket");
+
+  int result = zmq_disconnect(socket->get(), dsn.c_str());
+
+  if (result != 0) {
+    throwException(s_ZMQSocketException, errno, "Failed to disconnect the ZMQ socket: %s", zmq_strerror(errno));
+  }
+  
+  return this_;
+}
+
 static Object HHVM_METHOD(ZMQSocket, send, const String& message, int64_t mode) {
   auto socket = getResource<SocketData>(this_, "socket");
 
@@ -127,6 +139,7 @@ static class ZMQExtension : public Extension {
     HHVM_ME(ZMQSocket, __construct);
     HHVM_ME(ZMQSocket, bind);
     HHVM_ME(ZMQSocket, connect);
+    HHVM_ME(ZMQSocket, disconnect);
     HHVM_ME(ZMQSocket, send);
     HHVM_ME(ZMQSocket, setSockOpt);
     

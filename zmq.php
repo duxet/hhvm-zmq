@@ -264,10 +264,21 @@ class ZMQSocket {
      * @param boolean $force Tries to connect to end-point even if the object is already connected to the $dsn
      *
      * @throws ZMQException If connection fails
-     * @return ZMQ
+     * @return ZMQSocket
      */
     <<__Native>>
     public function connect(string $dsn, bool $force = false): ZMQSocket;
+
+    /**
+     * Disconnect the socket from a previously connected remote endpoint.
+     *
+     * @param string  $dsn   The disconnect dsn
+     *
+     * @throws ZMQException If disconnecting fails
+     * @return ZMQSocket
+     */
+    <<__Native>>
+    public function disconnect(string $dsn): ZMQSocket;
 
     /**
      *
@@ -279,9 +290,10 @@ class ZMQSocket {
      * @param boolean $force Tries to bind to end-point even if the object is already bound to the $dsn
      *
      * @throws ZMQException if binding fails
-     * @return ZMQ
+     * @return ZMQSocket
      */
-    public function bind($dsn, $force = false) {}
+    <<__Native>>
+    public function bind(string $dsn, bool $force = false): ZMQSocket;
 
     /**
      * Sets a socket option. For more information about socket options see 
@@ -330,7 +342,9 @@ class ZMQSocket {
      *
      * @return boolean
      */
-    public function isPersistent() {}
+    public function isPersistent() {
+        return false;
+    }
 }
 
 class ZMQException extends Exception {
