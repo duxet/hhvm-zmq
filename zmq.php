@@ -139,6 +139,18 @@ class ZMQSocket {
     <<__Native>>
     public function bind(string $dsn, bool $force = false): ZMQSocket;
 
+/**
+     *
+     * Unbind the socket from an endpoint.
+     *
+     * @param string  $dsn   The unbind dsn
+     *
+     * @throws ZMQException if binding fails
+     * @return ZMQSocket
+     */
+    <<__Native>>
+    public function unbind(string $dsn): ZMQSocket;
+
     /**
      * Sets a socket option. For more information about socket options see 
      * http://api.zeromq.org/zmq_setsockopt.html
