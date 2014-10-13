@@ -5,17 +5,17 @@
 #include "zmq_common.h"
 
 namespace HPHP {
-    
+
 const StaticString
   s_code("code"),
   s_message("message"),
   s_ZMQ("ZMQ"),
   s_ZMQSocketException("ZMQSocketException"),
-        
+
   s_SOCKET_PAIR("SOCKET_PAIR"),
   s_SOCKET_PUB("SOCKET_PUB"),
   s_SOCKET_SUB("SOCKET_SUB"),
-  
+
   #if ZMQ_VERSION_MAJOR >= 3
     s_SOCKET_XSUB("SOCKET_XSUB"),
     s_SOCKET_XPUB("SOCKET_XPUB"),
@@ -29,7 +29,7 @@ const StaticString
   s_SOCKET_PULL("SOCKET_PULL"),
   s_SOCKET_DEALER("SOCKET_DEALER"),
   s_SOCKET_ROUTER("SOCKET_ROUTER"),
-  
+
   #if ZMQ_MAJOR_VERSION >= 4
     s_SOCKET_STREAM("SOCKET_STREAM"),
   #endif
@@ -103,16 +103,16 @@ const StaticString
   s_SOCKOPT_REQ_RELAXED("SOCKOPT_REQ_RELAXED"),
   s_SOCKOPT_CONFLATE("SOCKOPT_CONFLATE"),
   s_SOCKOPT_ZAP_DOMAIN("SOCKOPT_ZAP_DOMAIN");
-    
+
 template<class T>
 ALWAYS_INLINE
 static T* getResource(const Object& obj, const char* varName) {
   auto var = obj->o_get(varName, true, s_zmqsocket.get());
-  
+
   if (var.getType() == KindOfNull) {
     return nullptr;
   }
-  
+
   return var.asCResRef().getTyped<T>();
 }
 
@@ -126,16 +126,16 @@ static void throwException(const String& clsName, int code, const char *fmt, ...
     ObjectData* obj = ObjectData::newInstance(cls);
 
     obj->o_set(s_code, code, clsName);
-    
+
     std::string msg;
-    
+
     va_list ap;
     va_start(ap, fmt);
     string_vsnprintf(msg, fmt, ap);
     va_end(ap);
-    
+
     obj->o_set(s_message, msg, clsName);
- 
+
     throw Object(obj);
 }
 
@@ -143,7 +143,7 @@ static void throwException(const String& clsName, int code, const char *fmt, ...
 
 static void HHVM_METHOD(ZMQContext, __construct, int64_t io_threads) {
   ContextData *context = ContextData::GetPersistent(io_threads);
-  
+
   if (context == nullptr) {
     context = new ContextData(io_threads);
   }
@@ -169,7 +169,7 @@ static Object HHVM_METHOD(ZMQSocket, bind, const String& dsn, bool force) {
   if (result != 0) {
       throwException(s_ZMQSocketException, errno, "Failed to bind the ZMQ: %s", zmq_strerror(errno));
   }
-  
+
   return this_;
 }
 
@@ -181,7 +181,7 @@ static Object HHVM_METHOD(ZMQSocket, unbind, const String& dsn) {
   if (result != 0) {
       throwException(s_ZMQSocketException, errno, "Failed to unbind the ZMQ socket: %s", zmq_strerror(errno));
   }
-  
+
   return this_;
 }
 
@@ -193,7 +193,7 @@ static Object HHVM_METHOD(ZMQSocket, connect, const String& dsn, bool force) {
   if (result != 0) {
     throwException(s_ZMQSocketException, errno, "Error creating socket: %s", zmq_strerror(errno));
   }
-  
+
   return this_;
 }
 
@@ -205,7 +205,7 @@ static Object HHVM_METHOD(ZMQSocket, disconnect, const String& dsn) {
   if (result != 0) {
     throwException(s_ZMQSocketException, errno, "Failed to disconnect the ZMQ socket: %s", zmq_strerror(errno));
   }
-  
+
   return this_;
 }
 
@@ -214,41 +214,41 @@ static Variant HHVM_METHOD(ZMQSocket, recv, int64_t mode) {
 
   zmq_msg_t msg;
   int result = zmq_msg_init(&msg);
-  
+
   if (result != 0) {
     throwException(s_ZMQSocketException, errno, "Failed to initialize message structure: %s", zmq_strerror(errno));
   }
-  
+
   result = zmq_msg_recv(&msg, socket->get(), mode);
   int errno_ = errno;
-  
+
   if (result == -1) {
-    zmq_msg_close(&msg);  
-      
+    zmq_msg_close(&msg);
+
     if (errno_ == EAGAIN) {
       return false;
-    }     
-      
+    }
+
     throwException(s_ZMQSocketException, errno, "Failed to receive message: %s", zmq_strerror(errno));
   }
-  
+
   std::string data((const char*) zmq_msg_data(&msg), zmq_msg_size(&msg));
-  
+
   zmq_msg_close(&msg);
-  
+
   return data;
 }
 
 static Variant HHVM_METHOD(ZMQSocket, send, const String& message, int64_t mode) {
   auto socket = getResource<SocketData>(this_, "socket");
 
-  int result = zmq_send(socket->get(), message.c_str(), message.size() + 1, mode);
+  int result = zmq_send(socket->get(), message.c_str(), message.size(), mode);
 
   if (result == -1) {
     if (errno == EAGAIN) {
       return false;
-    }  
-      
+    }
+
     throwException(s_ZMQSocketException, errno, "Failed to send message: %s", zmq_strerror(errno));
   }
 
@@ -259,13 +259,13 @@ static Object HHVM_METHOD(ZMQSocket, setSockOpt, int64_t key, const Variant& val
   auto socket = getResource<SocketData>(this_, "socket");
 
   String sValue = value.toString();
-  
-  int result = zmq_setsockopt(socket->get(), key, sValue.c_str(), sValue.size() + 1);
+
+  int result = zmq_setsockopt(socket->get(), key, sValue.c_str(), sValue.size());
 
   if (result != 0) {
     throwException(s_ZMQSocketException, errno, "Failed to set socket option: %s", zmq_strerror(errno));
   }
-  
+
   return this_;
 }
 
@@ -275,7 +275,7 @@ static int64_t HHVM_METHOD(ZMQSocket, getSocketType) {
   int type;
   size_t type_size;
   type_size = sizeof(int);
-  
+
   int result = zmq_getsockopt(socket->get(), ZMQ_TYPE, &type, &type_size);
 
   if (result != -1) {
@@ -290,7 +290,7 @@ static class ZMQExtension : public Extension {
   ZMQExtension() : Extension("zmq") {}
   virtual void moduleInit() {
     HHVM_ME(ZMQContext, __construct);
-    
+
     HHVM_ME(ZMQSocket, __construct);
     HHVM_ME(ZMQSocket, bind);
     HHVM_ME(ZMQSocket, unbind);
@@ -300,7 +300,7 @@ static class ZMQExtension : public Extension {
     HHVM_ME(ZMQSocket, send);
     HHVM_ME(ZMQSocket, setSockOpt);
     HHVM_ME(ZMQSocket, getSocketType);
-    
+
     #define REGISTER_ZMQ_CONST_INT(name, value)                                \
     Native::registerClassConstant<KindOfInt64>(s_ZMQ.get(), name.get(),        \
                                               (int64_t) value);                \
@@ -308,7 +308,7 @@ static class ZMQExtension : public Extension {
     REGISTER_ZMQ_CONST_INT(s_SOCKET_PAIR, ZMQ_PAIR);
     REGISTER_ZMQ_CONST_INT(s_SOCKET_PUB, ZMQ_PUB);
     REGISTER_ZMQ_CONST_INT(s_SOCKET_SUB, ZMQ_SUB);
-    
+
     #if ZMQ_VERSION_MAJOR >= 3
       REGISTER_ZMQ_CONST_INT(s_SOCKET_XSUB, ZMQ_XSUB);
       REGISTER_ZMQ_CONST_INT(s_SOCKET_XPUB, ZMQ_XPUB);
@@ -322,7 +322,7 @@ static class ZMQExtension : public Extension {
     REGISTER_ZMQ_CONST_INT(s_SOCKET_PULL, ZMQ_PULL);
     REGISTER_ZMQ_CONST_INT(s_SOCKET_DEALER, ZMQ_DEALER);
     REGISTER_ZMQ_CONST_INT(s_SOCKET_ROUTER, ZMQ_ROUTER);
-    
+
     #if ZMQ_MAJOR_VERSION >= 4
       REGISTER_ZMQ_CONST_INT(s_SOCKET_STREAM, ZMQ_STREAM);
     #endif
@@ -350,7 +350,7 @@ static class ZMQExtension : public Extension {
     REGISTER_ZMQ_CONST_INT(s_ERR_ENOTSUP, ENOTSUP);
     REGISTER_ZMQ_CONST_INT(s_ERR_EFSM, EFSM);
     REGISTER_ZMQ_CONST_INT(s_ERR_ETERM, ETERM);
-    
+
     #if ZMQ_VERSION_MAJOR >= 3
       REGISTER_ZMQ_CONST_INT(s_SOCKOPT_SNDHWM, ZMQ_SNDHWM);
       REGISTER_ZMQ_CONST_INT(s_SOCKOPT_RCVHWM, ZMQ_RCVHWM);
