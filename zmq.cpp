@@ -156,7 +156,7 @@ static void HHVM_METHOD(ZMQContext, __construct, int64_t io_threads) {
 
 static void HHVM_METHOD(ZMQSocket, __construct, const Object& zmqcontext, int64_t type, const String& persistent_id, const Object& on_new_socket) {
   auto context = get_context(zmqcontext);
-  auto socket = NEWOBJ(SocketData)(context->get(), type);
+  auto socket = newres<SocketData>(context->get(), type);
 
   setVariable(this_, "socket", Resource(socket));
 }
@@ -255,12 +255,20 @@ static Variant HHVM_METHOD(ZMQSocket, send, const String& message, int64_t mode)
   return this_;
 }
 
-static Object HHVM_METHOD(ZMQSocket, setSockOpt, int64_t key, const Variant& value) {
+static Object HHVM_METHOD(ZMQSocket, setSockOpt, int key, const Variant& value) {
   auto socket = getResource<SocketData>(this_, "socket");
 
-  String sValue = value.toString();
+  int result = 0;
+  if(value.isNumeric()==true){
+    int64_t val = value.toInt64();
+    size_t size = sizeof(val);
+    result = zmq_setsockopt(socket->get(), key, &val, size);
+  }
+  else{
+    String sValue = value.toString();
+    result = zmq_setsockopt(socket->get(), key, sValue.c_str(), sValue.size());
+  }
 
-  int result = zmq_setsockopt(socket->get(), key, sValue.c_str(), sValue.size());
 
   if (result != 0) {
     throwException(s_ZMQSocketException, errno, "Failed to set socket option: %s", zmq_strerror(errno));
