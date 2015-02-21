@@ -27,13 +27,27 @@ ContextData *ContextData::GetPersistent(int64_t io_threads) {
 void ContextData::SetPersistent(int64_t io_threads, ContextData *context) {
   SetCachedImpl("zmq::persistent_contexts", io_threads, context);
 }
+std::string ContextData::GetHash(const char *name, int64_t io_threads) {
+  char buf[1024];
+  snprintf(buf, sizeof(buf), "%s:%ld",
+           name, io_threads);
+  return std::string(buf);
+}
+
+
+namespace {
+  thread_local std::unordered_map<std::string,
+                                  ContextData *> s_connections;
+}
 
 ContextData *ContextData::GetCachedImpl(const char *name, int64_t io_threads) {
-  return dynamic_cast<ContextData*>(g_persistentResources->get(name, std::to_string(io_threads).data()));
+  auto key = GetHash(name, io_threads);
+  return s_connections[key];
 }
 
 void ContextData::SetCachedImpl(const char *name, int64_t io_threads, ContextData *context) {
-  g_persistentResources->set(name, std::to_string(io_threads).data(), context);
+  auto key = GetHash(name, io_threads);
+  s_connections[key] = context;
 }
 
 ContextData::ContextData(int64_t io_threads) {

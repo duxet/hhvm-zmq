@@ -1,5 +1,4 @@
 #include "hphp/runtime/base/base-includes.h"
-#include "hphp/runtime/base/persistent-resource-store.h"
 #include "string.h"
 
 #include <zmq.h>
@@ -19,6 +18,7 @@ public:
   static void SetPersistent(int64_t io_threads, ContextData *context);
 
 private:
+  static std::string GetHash(const char *name, int64_t io_threads);
   static ContextData *GetCachedImpl(const char *name, int64_t io_threads);
   static void SetCachedImpl(const char *name, int64_t io_threads, ContextData *context);
 
