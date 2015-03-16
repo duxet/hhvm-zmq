@@ -7,7 +7,6 @@ ZMQ extension for HHVM. Shall be compatible with [existing PHP binding](http://p
 ## Building and installation
 
 ~~~
-export HPHP_HOME=/path/to/hhvm
 ./build.sh
 ~~~
 
